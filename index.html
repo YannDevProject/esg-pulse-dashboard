@@ -1,53 +1,38 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <title>ESG Pulse | Yannick Hochmann</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        body { font-family: sans-serif; background: #f4f7f6; color: #333; padding: 40px; }
-        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        h1 { color: #2c3e50; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { padding: 12px; border-bottom: 1px solid #eee; text-align: left; }
-        .total { font-size: 1.5em; font-weight: bold; color: #27ae60; margin-top: 20px; }
-    </style>
-</head>
-<body>
-    <div class="card">
-        <h1>Tableau de Bord Carbone - ESG Pulse</h1>
-        <div id="loading">Chargement des données sécurisées...</div>
-        <table id="emissions-table" style="display:none;">
-            <thead>
-                <tr>
-                    <th>Date</th><th>Entité</th><th>Scope</th><th>Activité</th><th>Total tCO2e</th>
-                </tr>
-            </thead>
-            <tbody id="table-body"></tbody>
-        </table>
-        <div id="total-val" class="total"></div>
-    </div>
+<script>
+    // On change le nom ici : 'supabaseClient' au lieu de 'supabase'
+    const _url = "https://ykrxslzmvhilmhkdicqj.supabase.co";
+    const _key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlrcnhzbHptdmhpbG1oa2RpY3FqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY4NjAxNTAsImV4cCI6MjA4MjQzNjE1MH0.l0piAICXO6Sjqufjxlbo8nIYqVHEL5lxbzyHJRygEXI"; // <--- Mets ta clé ANON ici
+    const supabaseClient = supabase.createClient(_url, _key); 
 
-    <script>
-        const _url = "https://ykrxslzmvhilmhkdicqj.supabase.co";
-        const _key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlrcnhzbHptdmhpbG1oa2RpY3FqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY4NjAxNTAsImV4cCI6MjA4MjQzNjE1MH0.l0piAICXO6Sjqufjxlbo8nIYqVHEL5lxbzyHJRygEXI"; // <--- Utilise la clé "anon/public" (PAS la service_role)
-        const supabase = supabase.createClient(_url, _key);
-
-        async function loadData() {
-            const { data, error } = await supabase.from('emissions').select('*');
-            if (data) {
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('emissions-table').style.display = 'table';
-                let total = 0;
-                const body = document.getElementById('table-body');
-                data.forEach(row => {
-                    total += row.tco2_total;
-                    body.innerHTML += `<tr><td>${row.date_reporting}</td><td>${row.entite}</td><td>${row.categorie_scope}</td><td>${row.type_activite}</td><td>${row.tco2_total.toFixed(2)}</td></tr>`;
-                });
-                document.getElementById('total-val').innerText = `Bilan Total : ${total.toFixed(2)} tCO2e`;
-            }
+    async function loadData() {
+        // On utilise le nouveau nom 'supabaseClient'
+        const { data, error } = await supabaseClient.from('emissions').select('*');
+        
+        if (error) {
+            console.error("Erreur de récupération:", error);
+            document.getElementById('loading').innerText = "Erreur de chargement des données.";
+            return;
         }
-        loadData();
-    </script>
-</body>
-</html>
+
+        if (data) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('emissions-table').style.display = 'table';
+            let total = 0;
+            const body = document.getElementById('table-body');
+            body.innerHTML = ""; // On vide avant de remplir
+            
+            data.forEach(row => {
+                total += row.tco2_total;
+                body.innerHTML += `<tr>
+                    <td>${row.date_reporting}</td>
+                    <td>${row.entite}</td>
+                    <td>${row.categorie_scope}</td>
+                    <td>${row.type_activite}</td>
+                    <td>${row.tco2_total.toFixed(2)}</td>
+                </tr>`;
+            });
+            document.getElementById('total-val').innerText = `Bilan Total : ${total.toFixed(2)} tCO2e`;
+        }
+    }
+    loadData();
+</script>
