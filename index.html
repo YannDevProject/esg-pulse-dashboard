@@ -2,102 +2,159 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>ESG Pulse | Yannick Hochmann</title>
+    <title>ESG Pulse | SaaS Edition</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; color: #333; display: flex; justify-content: center; padding-top: 50px; }
-        .card { background: white; width: 600px; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        h1 { color: #2c3e50; font-size: 24px; text-align: center; margin-bottom: 20px;}
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
-        th { background-color: #f8f9fa; color: #7f8c8d; font-weight: 600; text-align: left; padding: 12px; border-bottom: 2px solid #eee; }
-        td { padding: 12px; border-bottom: 1px solid #eee; color: #2c3e50; }
-        .total-box { margin-top: 25px; padding: 15px; background: #e8f8f5; border-radius: 8px; text-align: center; }
-        .total-text { color: #27ae60; font-weight: bold; font-size: 18px; }
-        #loading { text-align: center; color: #7f8c8d; font-style: italic; }
-        .error { color: #e74c3c; text-align: center; font-weight: bold; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; color: #333; display: flex; justify-content: center; padding: 20px; }
+        .container { display: flex; gap: 20px; width: 100%; max-width: 1000px; flex-wrap: wrap; }
+        
+        /* Style des Cartes */
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); flex: 1; min-width: 300px; }
+        
+        h1, h2 { color: #2c3e50; margin-top: 0; }
+        h2 { font-size: 18px; border-bottom: 2px solid #27ae60; padding-bottom: 10px; margin-bottom: 20px; }
+
+        /* Formulaire */
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: 600; color: #7f8c8d; font-size: 14px; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: #27ae60; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: background 0.3s; }
+        button:hover { background: #219150; }
+
+        /* Tableau */
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th { background: #f8f9fa; color: #7f8c8d; padding: 10px; text-align: left; }
+        td { padding: 10px; border-bottom: 1px solid #eee; }
+        .total-box { margin-top: 20px; text-align: right; color: #27ae60; font-weight: bold; font-size: 20px; }
     </style>
 </head>
 <body>
 
-    <div class="card">
-        <h1>🌍 ESG Pulse | Dashboard</h1>
+    <div class="container">
         
-        <div id="loading">Connexion au Cloud Sécurisé...</div>
-        
-        <table id="emissions-table" style="display:none;">
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Entité</th>
-                    <th>Activité</th>
-                    <th>tCO2e</th>
-                </tr>
-            </thead>
-            <tbody id="table-body"></tbody>
-        </table>
+        <div class="card">
+            <h2>📝 Nouvelle Saisie Carbone</h2>
+            <div class="form-group">
+                <label>Entité / Site</label>
+                <input type="text" id="entite" placeholder="Ex: Usine Lyon">
+            </div>
+            <div class="form-group">
+                <label>Type d'activité</label>
+                <select id="type_activite">
+                    <option value="Électricité">Électricité</option>
+                    <option value="Gaz">Gaz Naturel</option>
+                    <option value="Flotte Auto">Flotte Automobile</option>
+                    <option value="Fret Aérien">Fret Aérien</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Quantité (Unité Physique)</label>
+                <input type="number" id="quantite" placeholder="Ex: 1000">
+            </div>
+            <div class="form-group">
+                <label>Facteur Émission (kgCO2/unité)</label>
+                <input type="number" id="fe" value="0.05" step="0.001">
+                <small style="color:#999">Ex: 0.05 pour Elec FR, 2.3 pour Essence</small>
+            </div>
+            <div class="form-group">
+                <label>Code Sécurité</label>
+                <input type="password" id="passkey" placeholder="Code admin">
+            </div>
+            <button onclick="addEmission()">Ajouter au Cloud 🚀</button>
+        </div>
 
-        <div id="total-box" class="total-box" style="display:none;">
-            <span class="total-text" id="total-val">0.00 tCO2e</span>
+        <div class="card">
+            <h2>📊 Données en Temps Réel</h2>
+            <div id="loading">Synchronisation...</div>
+            <table id="emissions-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Entité</th>
+                        <th>Activité</th>
+                        <th>tCO2e</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body"></tbody>
+            </table>
+            <div class="total-box" id="total-val">0.00 tCO2e</div>
         </div>
     </div>
 
     <script>
         // --- CONFIGURATION ---
-        // Remets tes informations ici
         const _url = "https://ykrxslzmvhilmhkdicqj.supabase.co"; 
-        const _key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlrcnhzbHptdmhpbG1oa2RpY3FqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY4NjAxNTAsImV4cCI6MjA4MjQzNjE1MH0.l0piAICXO6Sjqufjxlbo8nIYqVHEL5lxbzyHJRygEXI"; // <--- REMPLACE CECI PAR TA CLÉ SUPABASE (celle qui commence par eyJ...)
+        const _key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlrcnhzbHptdmhpbG1oa2RpY3FqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY4NjAxNTAsImV4cCI6MjA4MjQzNjE1MH0.l0piAICXO6Sjqufjxlbo8nIYqVHEL5lxbzyHJRygEXI"; // <--- REMPLACE ICI PAR TA CLÉ !
 
-        // --- LOGIQUE ---
-        // On vérifie que la librairie est bien chargée
-        if (typeof supabase === 'undefined') {
-            document.getElementById('loading').innerHTML = "<span class='error'>Erreur critique : Librairie Supabase non chargée.</span>";
-        } else {
-            // Initialisation du client (avec un nom unique pour éviter les conflits)
-            const supabaseClient = supabase.createClient(_url, _key);
+        const supabaseClient = supabase.createClient(_url, _key);
 
-            async function loadData() {
-                // Requête vers la base de données
-                const { data, error } = await supabaseClient
-                    .from('emissions')
-                    .select('*')
-                    .order('date_reporting', { ascending: false }); // On trie par date la plus récente
+        // --- FONCTION LECTURE (READ) ---
+        async function loadData() {
+            const { data, error } = await supabaseClient
+                .from('emissions')
+                .select('*')
+                .order('created_at', { ascending: false });
 
-                if (error) {
-                    console.error("Erreur Supabase:", error);
-                    document.getElementById('loading').innerHTML = `<span class='error'>Erreur d'accès : ${error.message}</span>`;
-                    return;
-                }
-
-                if (data) {
-                    // Masquer le chargement
-                    document.getElementById('loading').style.display = 'none';
-                    document.getElementById('emissions-table').style.display = 'table';
-                    document.getElementById('total-box').style.display = 'block';
-
-                    let total = 0;
-                    const body = document.getElementById('table-body');
-                    body.innerHTML = ""; 
-                    
-                    // Boucle sur les données
-                    data.forEach(row => {
-                        total += row.tco2_total;
-                        body.innerHTML += `<tr>
-                            <td>${row.date_reporting}</td>
-                            <td>${row.entite}</td>
-                            <td>${row.type_activite}</td>
-                            <td><strong>${row.tco2_total.toFixed(2)}</strong></td>
-                        </tr>`;
-                    });
-
-                    // Affichage du total
-                    document.getElementById('total-val').innerText = `Bilan Global : ${total.toFixed(2)} tCO2e`;
-                }
+            if (data) {
+                document.getElementById('loading').style.display = 'none';
+                let total = 0;
+                const body = document.getElementById('table-body');
+                body.innerHTML = "";
+                data.forEach(row => {
+                    total += row.tco2_total;
+                    body.innerHTML += `<tr>
+                        <td>${row.date_reporting}</td>
+                        <td>${row.entite}</td>
+                        <td>${row.type_activite}</td>
+                        <td><strong>${row.tco2_total.toFixed(2)}</strong></td>
+                    </tr>`;
+                });
+                document.getElementById('total-val').innerText = `Total : ${total.toFixed(2)} tCO2e`;
             }
-            
-            // Lancement automatique
-            loadData();
         }
+
+        // --- FONCTION ÉCRITURE (WRITE) ---
+        async function addEmission() {
+            // 1. Vérification Sécurité (Basique)
+            const pass = document.getElementById('passkey').value;
+            if (pass !== "admin123") {
+                alert("⛔ Code sécurité incorrect !");
+                return;
+            }
+
+            // 2. Récupération des valeurs
+            const entite = document.getElementById('entite').value;
+            const type = document.getElementById('type_activite').value;
+            const quantite = parseFloat(document.getElementById('quantite').value);
+            const fe = parseFloat(document.getElementById('fe').value);
+
+            if (!entite || !quantite) return alert("Merci de remplir les champs !");
+
+            // 3. Envoi vers Supabase
+            // Note : On n'envoie PAS le total. Supabase le calculera tout seul !
+            const { error } = await supabaseClient
+                .from('emissions')
+                .insert({
+                    date_reporting: new Date().toISOString(),
+                    entite: entite,
+                    categorie_scope: 'Scope 1', // Simplification pour la démo
+                    type_activite: type,
+                    quantite_physique: quantite,
+                    unite_mesure: 'Unité',
+                    facteur_emission: fe
+                });
+
+            if (error) {
+                alert("Erreur: " + error.message);
+            } else {
+                // 4. Rafraîchissement automatique
+                loadData();
+                document.getElementById('quantite').value = ""; // Vider le champ
+                alert("✅ Donnée ajoutée et calculée par le Cloud !");
+            }
+        }
+
+        loadData();
     </script>
 </body>
 </html>
