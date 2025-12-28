@@ -2,35 +2,39 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>ESG Pulse | Executive Dashboard</title>
+    <title>ESG Pulse | Predictive AI</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; color: #333; display: flex; justify-content: center; padding: 20px; }
+        body { font-family: 'Segoe UI', sans-serif; background: #eef2f6; color: #333; display: flex; justify-content: center; padding: 20px; }
         .container { display: flex; gap: 20px; width: 100%; max-width: 1200px; flex-wrap: wrap; }
         
-        /* Design "Carte" Pro */
-        .card { background: white; padding: 25px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); flex: 1; min-width: 300px; border: 1px solid #ffffff; }
+        .card { background: white; padding: 25px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); flex: 1; min-width: 300px; }
         
-        h2 { font-size: 18px; color: #1e293b; border-bottom: 2px solid #3b82f6; padding-bottom: 10px; margin-bottom: 20px; letter-spacing: -0.5px; }
+        h2 { font-size: 18px; color: #1e293b; border-bottom: 2px solid #6366f1; padding-bottom: 10px; margin-bottom: 20px; }
         
-        /* Formulaire */
-        input, select { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc; outline: none; transition: 0.2s; }
-        input:focus, select:focus { border-color: #3b82f6; background: #fff; }
-        label { font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 5px; display: block; }
-        
-        button { width: 100%; padding: 14px; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: transform 0.2s; }
-        button:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(37, 99, 235, 0.3); }
+        /* Inputs & Buttons */
+        input, select { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc; }
+        button { width: 100%; padding: 14px; background: #6366f1; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        button:hover { background: #4f46e5; transform: scale(1.02); }
 
-        /* Zone Graphique */
-        .chart-container { position: relative; height: 250px; width: 100%; display: flex; justify-content: center; margin-bottom: 20px; }
+        /* Zone Prédictive */
+        .prediction-box {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            color: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; text-align: center;
+        }
+        .pred-title { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; }
+        .pred-value { font-size: 32px; font-weight: bold; margin: 10px 0; color: #38bdf8; }
+        .pred-alert { font-size: 14px; font-weight: 600; padding: 5px 10px; border-radius: 20px; display: inline-block;}
+        .alert-ok { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+        .alert-danger { background: rgba(239, 68, 68, 0.2); color: #f87171; }
 
-        /* Tableau */
-        table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        th { background: #f1f5f9; color: #475569; padding: 12px; text-align: left; border-radius: 6px 6px 0 0; }
-        td { padding: 12px; border-bottom: 1px solid #f1f5f9; color: #334155; }
-        .total-box { margin-top: 20px; text-align: center; background: #eff6ff; color: #1d4ed8; font-weight: 800; font-size: 24px; padding: 20px; border-radius: 12px; }
+        /* Table */
+        table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 20px;}
+        th { background: #f1f5f9; padding: 10px; text-align: left; }
+        td { padding: 10px; border-bottom: 1px solid #f1f5f9; }
+        .chart-container { height: 200px; width: 100%; position: relative; }
     </style>
 </head>
 <body>
@@ -38,50 +42,40 @@
     <div class="container">
         
         <div class="card" style="flex: 0 0 300px;">
-            <h2>⚡ Saisie Opérationnelle</h2>
-            <label>Site / Entité</label>
-            <input type="text" id="entite" placeholder="Ex: Siège Paris">
-            
-            <label>Source d'émission</label>
+            <h2>⚡ Injection Données</h2>
+            <label>Entité</label><input type="text" id="entite" placeholder="Ex: Usine Lyon">
+            <label>Source</label>
             <select id="type_activite">
                 <option value="Électricité">Électricité</option>
-                <option value="Gaz Naturel">Gaz Naturel</option>
-                <option value="Flotte Auto">Flotte Automobile</option>
-                <option value="Fret Aérien">Fret Aérien</option>
-                <option value="Numérique">Numérique / IT</option>
+                <option value="Gaz">Gaz Naturel</option>
+                <option value="Flotte">Flotte Auto</option>
+                <option value="Fret">Fret Aérien</option>
             </select>
-            
-            <label>Consommation</label>
-            <input type="number" id="quantite" placeholder="Valeur">
-            
-            <label>Facteur Émission (FE)</label>
-            <input type="number" id="fe" value="0.05" step="0.001">
-            
-            <label>Admin Key</label>
-            <input type="password" id="passkey" placeholder="Code secret">
-            
-            <button onclick="addEmission()">Injecter la Donnée</button>
+            <label>Quantité</label><input type="number" id="quantite">
+            <label>Facteur Émission</label><input type="number" id="fe" value="0.05" step="0.001">
+            <label>Admin Key</label><input type="password" id="passkey">
+            <button onclick="addEmission()">Injecter</button>
         </div>
 
         <div class="card">
-            <h2>🌍 Pilotage Stratégique</h2>
+            <h2>🔮 Oracle Prédictif 2025</h2>
             
+            <div class="prediction-box">
+                <div class="pred-title">Projection Fin d'Année (Estimation Linéaire)</div>
+                <div id="pred-val" class="pred-value">-- tCO2e</div>
+                <div id="pred-msg" class="pred-alert">En attente de données...</div>
+                <div style="margin-top:10px; font-size:12px; color:#cbd5e1">
+                    Actuel : <span id="current-total">0</span> tCO2e | Objectif : 250 tCO2e
+                </div>
+            </div>
+
             <div class="chart-container">
                 <canvas id="myChart"></canvas>
             </div>
 
-            <div class="total-box" id="total-val">-- tCO2e</div>
-
-            <div style="overflow-y: auto; max-height: 300px; margin-top:20px;">
+            <div style="overflow-y: auto; max-height: 200px;">
                 <table id="emissions-table">
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Entité</th>
-                            <th>Source</th>
-                            <th>Impact (tCO2e)</th>
-                        </tr>
-                    </thead>
+                    <thead><tr><th>Date</th><th>Source</th><th>tCO2e</th></tr></thead>
                     <tbody id="table-body"></tbody>
                 </table>
             </div>
@@ -89,122 +83,104 @@
     </div>
 
     <script>
-        // --- CONFIGURATION DU LEADER ---
+        // CONFIGURATION
         const _url = "https://ykrxslzmvhilmhkdicqj.supabase.co"; 
         const _key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlrcnhzbHptdmhpbG1oa2RpY3FqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY4NjAxNTAsImV4cCI6MjA4MjQzNjE1MH0.l0piAICXO6Sjqufjxlbo8nIYqVHEL5lxbzyHJRygEXI"; // <--- REMETTRE TA CLE ICI
-
         const supabaseClient = supabase.createClient(_url, _key);
-        let myChart = null; // Variable pour stocker le graphique
+        const QUOTA_ANNUEL = 250; // Ton objectif fictif
 
-        // --- MOTEUR D'AFFICHAGE ---
+        let myChart = null;
+
         async function loadData() {
-            const { data, error } = await supabaseClient
-                .from('emissions')
-                .select('*')
-                .order('created_at', { ascending: false });
+            const { data } = await supabaseClient.from('emissions').select('*').order('created_at', { ascending: false });
 
             if (data) {
                 let total = 0;
-                // Dictionnaire pour l'agrégation par catégorie (Ex: { 'Gaz': 12, 'Elec': 50 })
-                let categories = {}; 
-
+                let categories = {};
                 const body = document.getElementById('table-body');
                 body.innerHTML = "";
-                
-                data.forEach(row => {
-                    // 1. Calcul du total global
-                    total += row.tco2_total;
-                    
-                    // 2. Remplissage du tableau
-                    body.innerHTML += `<tr>
-                        <td>${new Date(row.date_reporting).toLocaleDateString()}</td>
-                        <td>${row.entite}</td>
-                        <td>${row.type_activite}</td>
-                        <td><strong>${row.tco2_total.toFixed(2)}</strong></td>
-                    </tr>`;
 
-                    // 3. Agrégation pour le graphique
-                    if (categories[row.type_activite]) {
-                        categories[row.type_activite] += row.tco2_total;
-                    } else {
-                        categories[row.type_activite] = row.tco2_total;
-                    }
+                // Calculs de base
+                data.forEach(row => {
+                    total += row.tco2_total;
+                    categories[row.type_activite] = (categories[row.type_activite] || 0) + row.tco2_total;
+                    body.innerHTML += `<tr><td>${new Date(row.date_reporting).toLocaleDateString()}</td><td>${row.type_activite}</td><td><strong>${row.tco2_total.toFixed(2)}</strong></td></tr>`;
                 });
 
-                document.getElementById('total-val').innerText = `${total.toFixed(2)} tCO2e`;
-
-                // 4. Mise à jour du Graphique
+                document.getElementById('current-total').innerText = total.toFixed(2);
                 updateChart(categories);
+                
+                // --- MOTEUR PRÉDICTIF (L'Intelligence) ---
+                calculateProjection(total);
+            }
+        }
+
+        function calculateProjection(currentTotal) {
+            // Algorithme simple : Règle de 3 sur l'année
+            const today = new Date();
+            const startOfYear = new Date(today.getFullYear(), 0, 1);
+            const dayOfYear = Math.floor((today - startOfYear) / (1000 * 60 * 60 * 24)) || 1; // Eviter division par 0
+            
+            // Vitesse moyenne par jour (Burn Rate)
+            const dailyRate = currentTotal / dayOfYear;
+            
+            // Projection sur 365 jours
+            const projection = dailyRate * 365;
+
+            // Affichage
+            const divVal = document.getElementById('pred-val');
+            const divMsg = document.getElementById('pred-msg');
+
+            divVal.innerText = `${projection.toFixed(0)} tCO2e`;
+
+            if (projection > QUOTA_ANNUEL) {
+                divMsg.className = "pred-alert alert-danger";
+                divMsg.innerText = `⚠️ DÉPASSEMENT PRÉVU (+${(projection - QUOTA_ANNUEL).toFixed(0)}t)`;
+            } else {
+                divMsg.className = "pred-alert alert-ok";
+                divMsg.innerText = "✅ DANS LES CLOUS";
             }
         }
 
         function updateChart(dataMap) {
             const ctx = document.getElementById('myChart').getContext('2d');
-            
-            // Préparation des étiquettes et des données
-            const labels = Object.keys(dataMap);
-            const values = Object.values(dataMap);
-
-            // Si un graphique existe déjà, on le détruit pour éviter les bugs d'affichage
-            if (myChart) {
-                myChart.destroy();
-            }
-
-            // Création du nouveau graphique
+            if (myChart) myChart.destroy();
             myChart = new Chart(ctx, {
-                type: 'doughnut', // Type "Donut"
+                type: 'bar', // On change en Barres pour varier
                 data: {
-                    labels: labels,
+                    labels: Object.keys(dataMap),
                     datasets: [{
-                        data: values,
-                        backgroundColor: [
-                            '#3b82f6', // Bleu
-                            '#10b981', // Vert
-                            '#f59e0b', // Orange
-                            '#ef4444', // Rouge
-                            '#8b5cf6'  // Violet
-                        ],
-                        borderWidth: 0
+                        label: 'Émissions par Source',
+                        data: Object.values(dataMap),
+                        backgroundColor: '#6366f1',
+                        borderRadius: 5
                     }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'right' }
-                    }
-                }
+                options: { responsive: true, maintainAspectRatio: false }
             });
         }
 
-        // --- MOTEUR D'INJECTION ---
         async function addEmission() {
             const pass = document.getElementById('passkey').value;
-            if (pass !== "admin123") return alert("⛔ Accès refusé");
-
+            if (pass !== "admin123") return alert("⛔");
+            
             const entite = document.getElementById('entite').value;
             const type = document.getElementById('type_activite').value;
             const quantite = parseFloat(document.getElementById('quantite').value);
             const fe = parseFloat(document.getElementById('fe').value);
 
-            if (!entite || !quantite) return alert("Champs vides !");
+            if (!entite) return;
 
-            const { error } = await supabaseClient.from('emissions').insert({
+            await supabaseClient.from('emissions').insert({
                 date_reporting: new Date().toISOString(),
                 entite: entite,
-                categorie_scope: 'Scope 1', 
+                categorie_scope: 'Scope 1',
                 type_activite: type,
                 quantite_physique: quantite,
-                unite_mesure: 'Unit',
+                unite_mesure: 'u',
                 facteur_emission: fe
             });
-
-            if (!error) {
-                loadData(); // On recharge tout (Tableau + Graphique)
-                document.getElementById('quantite').value = "";
-            } else {
-                alert(error.message);
-            }
+            loadData();
         }
 
         loadData();
