@@ -2,29 +2,35 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>ESG Pulse | Predictive AI</title>
+    <title>ESG Pulse | Audit Edition</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #eef2f6; color: #333; display: flex; justify-content: center; padding: 20px; }
         .container { display: flex; gap: 20px; width: 100%; max-width: 1200px; flex-wrap: wrap; }
         
-        .card { background: white; padding: 25px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); flex: 1; min-width: 300px; }
+        .card { background: white; padding: 25px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); flex: 1; min-width: 300px; position: relative; }
         
         h2 { font-size: 18px; color: #1e293b; border-bottom: 2px solid #6366f1; padding-bottom: 10px; margin-bottom: 20px; }
         
         /* Inputs & Buttons */
         input, select { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc; }
-        button { width: 100%; padding: 14px; background: #6366f1; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        button:hover { background: #4f46e5; transform: scale(1.02); }
+        
+        /* Bouton Principal */
+        .btn-primary { width: 100%; padding: 14px; background: #6366f1; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn-primary:hover { background: #4f46e5; transform: translateY(-2px); }
+
+        /* Bouton Export (Nouveau) */
+        .btn-export { position: absolute; top: 20px; right: 20px; background: #10b981; color: white; padding: 8px 15px; border-radius: 6px; font-size: 12px; font-weight: bold; border: none; cursor: pointer; display: flex; align-items: center; gap: 5px; text-decoration: none;}
+        .btn-export:hover { background: #059669; }
 
         /* Zone Prédictive */
         .prediction-box {
             background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
             color: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; text-align: center;
         }
-        .pred-title { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; }
         .pred-value { font-size: 32px; font-weight: bold; margin: 10px 0; color: #38bdf8; }
         .pred-alert { font-size: 14px; font-weight: 600; padding: 5px 10px; border-radius: 20px; display: inline-block;}
         .alert-ok { background: rgba(16, 185, 129, 0.2); color: #34d399; }
@@ -34,7 +40,7 @@
         table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 20px;}
         th { background: #f1f5f9; padding: 10px; text-align: left; }
         td { padding: 10px; border-bottom: 1px solid #f1f5f9; }
-        .chart-container { height: 200px; width: 100%; position: relative; }
+        .chart-container { height: 250px; width: 100%; position: relative; display: flex; justify-content: center; }
     </style>
 </head>
 <body>
@@ -54,19 +60,20 @@
             <label>Quantité</label><input type="number" id="quantite">
             <label>Facteur Émission</label><input type="number" id="fe" value="0.05" step="0.001">
             <label>Admin Key</label><input type="password" id="passkey">
-            <button onclick="addEmission()">Injecter</button>
+            <button class="btn-primary" onclick="addEmission()">Injecter</button>
         </div>
 
         <div class="card">
-            <h2>🔮 Oracle Prédictif 2025</h2>
+            <h2>🔮 Oracle & Audit</h2>
+            
+            <button onclick="exportCSV()" class="btn-export">
+                <i class="fa-solid fa-file-csv"></i> Export CSV
+            </button>
             
             <div class="prediction-box">
-                <div class="pred-title">Projection Fin d'Année (Estimation Linéaire)</div>
+                <div style="font-size:12px; text-transform:uppercase; color:#94a3b8;">Projection 2025</div>
                 <div id="pred-val" class="pred-value">-- tCO2e</div>
-                <div id="pred-msg" class="pred-alert">En attente de données...</div>
-                <div style="margin-top:10px; font-size:12px; color:#cbd5e1">
-                    Actuel : <span id="current-total">0</span> tCO2e | Objectif : 250 tCO2e
-                </div>
+                <div id="pred-msg" class="pred-alert">Calcul en cours...</div>
             </div>
 
             <div class="chart-container">
@@ -83,83 +90,103 @@
     </div>
 
     <script>
-        // CONFIGURATION
+        // --- CONFIGURATION ---
         const _url = "https://ykrxslzmvhilmhkdicqj.supabase.co"; 
-        const _key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlrcnhzbHptdmhpbG1oa2RpY3FqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY4NjAxNTAsImV4cCI6MjA4MjQzNjE1MH0.l0piAICXO6Sjqufjxlbo8nIYqVHEL5lxbzyHJRygEXI"; // <--- REMETTRE TA CLE ICI
+        const _key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlrcnhzbHptdmhpbG1oa2RpY3FqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY4NjAxNTAsImV4cCI6MjA4MjQzNjE1MH0.l0piAICXO6Sjqufjxlbo8nIYqVHEL5lxbzyHJRygEXI"; // <--- TA CLE ICI
         const supabaseClient = supabase.createClient(_url, _key);
-        const QUOTA_ANNUEL = 250; // Ton objectif fictif
-
+        const QUOTA_ANNUEL = 250;
+        let globalData = []; // On stocke les données pour l'export
         let myChart = null;
 
         async function loadData() {
             const { data } = await supabaseClient.from('emissions').select('*').order('created_at', { ascending: false });
 
             if (data) {
+                globalData = data; // Sauvegarde pour l'export CSV
                 let total = 0;
                 let categories = {};
                 const body = document.getElementById('table-body');
                 body.innerHTML = "";
 
-                // Calculs de base
                 data.forEach(row => {
                     total += row.tco2_total;
                     categories[row.type_activite] = (categories[row.type_activite] || 0) + row.tco2_total;
                     body.innerHTML += `<tr><td>${new Date(row.date_reporting).toLocaleDateString()}</td><td>${row.type_activite}</td><td><strong>${row.tco2_total.toFixed(2)}</strong></td></tr>`;
                 });
 
-                document.getElementById('current-total').innerText = total.toFixed(2);
                 updateChart(categories);
-                
-                // --- MOTEUR PRÉDICTIF (L'Intelligence) ---
                 calculateProjection(total);
             }
         }
 
-        function calculateProjection(currentTotal) {
-            // Algorithme simple : Règle de 3 sur l'année
-            const today = new Date();
-            const startOfYear = new Date(today.getFullYear(), 0, 1);
-            const dayOfYear = Math.floor((today - startOfYear) / (1000 * 60 * 60 * 24)) || 1; // Eviter division par 0
+        // --- MOTEUR GRAPHIQUE (DONUT RESTAURÉ) ---
+        function updateChart(dataMap) {
+            const ctx = document.getElementById('myChart').getContext('2d');
+            if (myChart) myChart.destroy();
             
-            // Vitesse moyenne par jour (Burn Rate)
-            const dailyRate = currentTotal / dayOfYear;
-            
-            // Projection sur 365 jours
-            const projection = dailyRate * 365;
+            myChart = new Chart(ctx, {
+                type: 'doughnut', // <--- RETOUR DU DONUT
+                data: {
+                    labels: Object.keys(dataMap),
+                    datasets: [{
+                        data: Object.values(dataMap),
+                        backgroundColor: ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'right' } }
+                }
+            });
+        }
 
-            // Affichage
+        // --- MOTEUR PRÉDICTIF ---
+        function calculateProjection(currentTotal) {
+            const today = new Date();
+            const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 1)) / 86400000) || 1;
+            const projection = (currentTotal / dayOfYear) * 365;
+            
             const divVal = document.getElementById('pred-val');
             const divMsg = document.getElementById('pred-msg');
-
             divVal.innerText = `${projection.toFixed(0)} tCO2e`;
 
             if (projection > QUOTA_ANNUEL) {
                 divMsg.className = "pred-alert alert-danger";
-                divMsg.innerText = `⚠️ DÉPASSEMENT PRÉVU (+${(projection - QUOTA_ANNUEL).toFixed(0)}t)`;
+                divMsg.innerText = `⚠️ DÉPASSEMENT PRÉVU`;
             } else {
                 divMsg.className = "pred-alert alert-ok";
-                divMsg.innerText = "✅ DANS LES CLOUS";
+                divMsg.innerText = "✅ OBJECTIF SÉCURISÉ";
             }
         }
 
-        function updateChart(dataMap) {
-            const ctx = document.getElementById('myChart').getContext('2d');
-            if (myChart) myChart.destroy();
-            myChart = new Chart(ctx, {
-                type: 'bar', // On change en Barres pour varier
-                data: {
-                    labels: Object.keys(dataMap),
-                    datasets: [{
-                        label: 'Émissions par Source',
-                        data: Object.values(dataMap),
-                        backgroundColor: '#6366f1',
-                        borderRadius: 5
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false }
+        // --- MOTEUR EXPORT CSV (NOUVEAU) ---
+        function exportCSV() {
+            if (!globalData.length) return alert("Pas de données à exporter !");
+            
+            // 1. Création de l'en-tête CSV
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "Date,Entite,Source,Quantite,FacteurEmission,Total_tCO2e\n"; // Header
+
+            // 2. Remplissage ligne par ligne
+            globalData.forEach(row => {
+                const date = row.date_reporting.split('T')[0];
+                csvContent += `${date},${row.entite},${row.type_activite},${row.quantite_physique},${row.facteur_emission},${row.tco2_total}\n`;
             });
+
+            // 3. Téléchargement forcé via le navigateur
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "esg_audit_export.csv");
+            document.body.appendChild(link); // Requis pour Firefox
+            link.click(); // Clic automatique
+            document.body.removeChild(link); // Nettoyage
         }
 
+        // --- INSERTION ---
         async function addEmission() {
             const pass = document.getElementById('passkey').value;
             if (pass !== "admin123") return alert("⛔");
