@@ -2,93 +2,101 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>ESG Pulse | SaaS Edition</title>
+    <title>ESG Pulse | Executive Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; color: #333; display: flex; justify-content: center; padding: 20px; }
-        .container { display: flex; gap: 20px; width: 100%; max-width: 1000px; flex-wrap: wrap; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; color: #333; display: flex; justify-content: center; padding: 20px; }
+        .container { display: flex; gap: 20px; width: 100%; max-width: 1200px; flex-wrap: wrap; }
         
-        /* Style des Cartes */
-        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); flex: 1; min-width: 300px; }
+        /* Design "Carte" Pro */
+        .card { background: white; padding: 25px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); flex: 1; min-width: 300px; border: 1px solid #ffffff; }
         
-        h1, h2 { color: #2c3e50; margin-top: 0; }
-        h2 { font-size: 18px; border-bottom: 2px solid #27ae60; padding-bottom: 10px; margin-bottom: 20px; }
-
+        h2 { font-size: 18px; color: #1e293b; border-bottom: 2px solid #3b82f6; padding-bottom: 10px; margin-bottom: 20px; letter-spacing: -0.5px; }
+        
         /* Formulaire */
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: 600; color: #7f8c8d; font-size: 14px; }
-        input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background: #27ae60; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: background 0.3s; }
-        button:hover { background: #219150; }
+        input, select { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc; outline: none; transition: 0.2s; }
+        input:focus, select:focus { border-color: #3b82f6; background: #fff; }
+        label { font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 5px; display: block; }
+        
+        button { width: 100%; padding: 14px; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: transform 0.2s; }
+        button:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(37, 99, 235, 0.3); }
+
+        /* Zone Graphique */
+        .chart-container { position: relative; height: 250px; width: 100%; display: flex; justify-content: center; margin-bottom: 20px; }
 
         /* Tableau */
         table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        th { background: #f8f9fa; color: #7f8c8d; padding: 10px; text-align: left; }
-        td { padding: 10px; border-bottom: 1px solid #eee; }
-        .total-box { margin-top: 20px; text-align: right; color: #27ae60; font-weight: bold; font-size: 20px; }
+        th { background: #f1f5f9; color: #475569; padding: 12px; text-align: left; border-radius: 6px 6px 0 0; }
+        td { padding: 12px; border-bottom: 1px solid #f1f5f9; color: #334155; }
+        .total-box { margin-top: 20px; text-align: center; background: #eff6ff; color: #1d4ed8; font-weight: 800; font-size: 24px; padding: 20px; border-radius: 12px; }
     </style>
 </head>
 <body>
 
     <div class="container">
         
-        <div class="card">
-            <h2>📝 Nouvelle Saisie Carbone</h2>
-            <div class="form-group">
-                <label>Entité / Site</label>
-                <input type="text" id="entite" placeholder="Ex: Usine Lyon">
-            </div>
-            <div class="form-group">
-                <label>Type d'activité</label>
-                <select id="type_activite">
-                    <option value="Électricité">Électricité</option>
-                    <option value="Gaz">Gaz Naturel</option>
-                    <option value="Flotte Auto">Flotte Automobile</option>
-                    <option value="Fret Aérien">Fret Aérien</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Quantité (Unité Physique)</label>
-                <input type="number" id="quantite" placeholder="Ex: 1000">
-            </div>
-            <div class="form-group">
-                <label>Facteur Émission (kgCO2/unité)</label>
-                <input type="number" id="fe" value="0.05" step="0.001">
-                <small style="color:#999">Ex: 0.05 pour Elec FR, 2.3 pour Essence</small>
-            </div>
-            <div class="form-group">
-                <label>Code Sécurité</label>
-                <input type="password" id="passkey" placeholder="Code admin">
-            </div>
-            <button onclick="addEmission()">Ajouter au Cloud 🚀</button>
+        <div class="card" style="flex: 0 0 300px;">
+            <h2>⚡ Saisie Opérationnelle</h2>
+            <label>Site / Entité</label>
+            <input type="text" id="entite" placeholder="Ex: Siège Paris">
+            
+            <label>Source d'émission</label>
+            <select id="type_activite">
+                <option value="Électricité">Électricité</option>
+                <option value="Gaz Naturel">Gaz Naturel</option>
+                <option value="Flotte Auto">Flotte Automobile</option>
+                <option value="Fret Aérien">Fret Aérien</option>
+                <option value="Numérique">Numérique / IT</option>
+            </select>
+            
+            <label>Consommation</label>
+            <input type="number" id="quantite" placeholder="Valeur">
+            
+            <label>Facteur Émission (FE)</label>
+            <input type="number" id="fe" value="0.05" step="0.001">
+            
+            <label>Admin Key</label>
+            <input type="password" id="passkey" placeholder="Code secret">
+            
+            <button onclick="addEmission()">Injecter la Donnée</button>
         </div>
 
         <div class="card">
-            <h2>📊 Données en Temps Réel</h2>
-            <div id="loading">Synchronisation...</div>
-            <table id="emissions-table">
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Entité</th>
-                        <th>Activité</th>
-                        <th>tCO2e</th>
-                    </tr>
-                </thead>
-                <tbody id="table-body"></tbody>
-            </table>
-            <div class="total-box" id="total-val">0.00 tCO2e</div>
+            <h2>🌍 Pilotage Stratégique</h2>
+            
+            <div class="chart-container">
+                <canvas id="myChart"></canvas>
+            </div>
+
+            <div class="total-box" id="total-val">-- tCO2e</div>
+
+            <div style="overflow-y: auto; max-height: 300px; margin-top:20px;">
+                <table id="emissions-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Entité</th>
+                            <th>Source</th>
+                            <th>Impact (tCO2e)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 
     <script>
-        // --- CONFIGURATION ---
+        // --- CONFIGURATION DU LEADER ---
         const _url = "https://ykrxslzmvhilmhkdicqj.supabase.co"; 
-        const _key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlrcnhzbHptdmhpbG1oa2RpY3FqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY4NjAxNTAsImV4cCI6MjA4MjQzNjE1MH0.l0piAICXO6Sjqufjxlbo8nIYqVHEL5lxbzyHJRygEXI"; // <--- REMPLACE ICI PAR TA CLÉ !
+        const _key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlrcnhzbHptdmhpbG1oa2RpY3FqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY4NjAxNTAsImV4cCI6MjA4MjQzNjE1MH0.l0piAICXO6Sjqufjxlbo8nIYqVHEL5lxbzyHJRygEXI"; // <--- REMETTRE TA CLE ICI
 
         const supabaseClient = supabase.createClient(_url, _key);
+        let myChart = null; // Variable pour stocker le graphique
 
-        // --- FONCTION LECTURE (READ) ---
+        // --- MOTEUR D'AFFICHAGE ---
         async function loadData() {
             const { data, error } = await supabaseClient
                 .from('emissions')
@@ -96,61 +104,106 @@
                 .order('created_at', { ascending: false });
 
             if (data) {
-                document.getElementById('loading').style.display = 'none';
                 let total = 0;
+                // Dictionnaire pour l'agrégation par catégorie (Ex: { 'Gaz': 12, 'Elec': 50 })
+                let categories = {}; 
+
                 const body = document.getElementById('table-body');
                 body.innerHTML = "";
+                
                 data.forEach(row => {
+                    // 1. Calcul du total global
                     total += row.tco2_total;
+                    
+                    // 2. Remplissage du tableau
                     body.innerHTML += `<tr>
-                        <td>${row.date_reporting}</td>
+                        <td>${new Date(row.date_reporting).toLocaleDateString()}</td>
                         <td>${row.entite}</td>
                         <td>${row.type_activite}</td>
                         <td><strong>${row.tco2_total.toFixed(2)}</strong></td>
                     </tr>`;
+
+                    // 3. Agrégation pour le graphique
+                    if (categories[row.type_activite]) {
+                        categories[row.type_activite] += row.tco2_total;
+                    } else {
+                        categories[row.type_activite] = row.tco2_total;
+                    }
                 });
-                document.getElementById('total-val').innerText = `Total : ${total.toFixed(2)} tCO2e`;
+
+                document.getElementById('total-val').innerText = `${total.toFixed(2)} tCO2e`;
+
+                // 4. Mise à jour du Graphique
+                updateChart(categories);
             }
         }
 
-        // --- FONCTION ÉCRITURE (WRITE) ---
-        async function addEmission() {
-            // 1. Vérification Sécurité (Basique)
-            const pass = document.getElementById('passkey').value;
-            if (pass !== "admin123") {
-                alert("⛔ Code sécurité incorrect !");
-                return;
+        function updateChart(dataMap) {
+            const ctx = document.getElementById('myChart').getContext('2d');
+            
+            // Préparation des étiquettes et des données
+            const labels = Object.keys(dataMap);
+            const values = Object.values(dataMap);
+
+            // Si un graphique existe déjà, on le détruit pour éviter les bugs d'affichage
+            if (myChart) {
+                myChart.destroy();
             }
 
-            // 2. Récupération des valeurs
+            // Création du nouveau graphique
+            myChart = new Chart(ctx, {
+                type: 'doughnut', // Type "Donut"
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: values,
+                        backgroundColor: [
+                            '#3b82f6', // Bleu
+                            '#10b981', // Vert
+                            '#f59e0b', // Orange
+                            '#ef4444', // Rouge
+                            '#8b5cf6'  // Violet
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'right' }
+                    }
+                }
+            });
+        }
+
+        // --- MOTEUR D'INJECTION ---
+        async function addEmission() {
+            const pass = document.getElementById('passkey').value;
+            if (pass !== "admin123") return alert("⛔ Accès refusé");
+
             const entite = document.getElementById('entite').value;
             const type = document.getElementById('type_activite').value;
             const quantite = parseFloat(document.getElementById('quantite').value);
             const fe = parseFloat(document.getElementById('fe').value);
 
-            if (!entite || !quantite) return alert("Merci de remplir les champs !");
+            if (!entite || !quantite) return alert("Champs vides !");
 
-            // 3. Envoi vers Supabase
-            // Note : On n'envoie PAS le total. Supabase le calculera tout seul !
-            const { error } = await supabaseClient
-                .from('emissions')
-                .insert({
-                    date_reporting: new Date().toISOString(),
-                    entite: entite,
-                    categorie_scope: 'Scope 1', // Simplification pour la démo
-                    type_activite: type,
-                    quantite_physique: quantite,
-                    unite_mesure: 'Unité',
-                    facteur_emission: fe
-                });
+            const { error } = await supabaseClient.from('emissions').insert({
+                date_reporting: new Date().toISOString(),
+                entite: entite,
+                categorie_scope: 'Scope 1', 
+                type_activite: type,
+                quantite_physique: quantite,
+                unite_mesure: 'Unit',
+                facteur_emission: fe
+            });
 
-            if (error) {
-                alert("Erreur: " + error.message);
+            if (!error) {
+                loadData(); // On recharge tout (Tableau + Graphique)
+                document.getElementById('quantite').value = "";
             } else {
-                // 4. Rafraîchissement automatique
-                loadData();
-                document.getElementById('quantite').value = ""; // Vider le champ
-                alert("✅ Donnée ajoutée et calculée par le Cloud !");
+                alert(error.message);
             }
         }
 
